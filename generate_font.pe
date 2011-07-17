@@ -1,0 +1,42 @@
+#!/usr/bin/fontforge
+usless = 33;
+i = 0;
+chars = Array(2000);
+while ( $argc > 1 )
+temp = $1
+if (temp == '-font')
+    shift;
+    fontName = $1;
+    shift;
+#elseif (temp == '-cn')
+#    shift;
+#    charsNum = $1;
+#    chars = Array();
+#    Print(charsNum);
+#    shift;
+else
+    chars[i] = $1;
+    shift;
+    i++; 
+endif;
+endloop
+charsNum = i;
+i = 0;
+template = "template.ttf";
+while (i < charsNum)
+    Open(fontName);
+    Select(chars[i]);
+    Copy();
+    name = GlyphInfo("Name");
+    Print(name);
+    Open(template);
+    Select(usless);
+    Clear();
+    Select(chars[i]);
+    Paste();
+    Generate("chars/" + name + ".ttf");
+    Clear();
+    i++;
+endloop
+Close();
+Quit(0);
