@@ -1,0 +1,301 @@
+/**
+ * 
+ */
+package lila.first;
+
+import java.util.Scanner;
+
+/**
+ * @author lila.zhou
+ *
+ */
+public class Atm {
+
+    /**
+     * @param args
+     */
+    public static void main(String[] args) {
+        Scanner scanner = new Scanner(System.in);
+        Util util = new Util();
+
+        System.out.println("Welcome to use Lila Bank's ATM");
+
+        System.out.println("Please choose currency:");
+        System.out.println("1. RMB; 2. Dollar"); // TODO DIY
+
+        Integer currency = scanner.nextInt();
+        do {
+            currency = scanner.nextInt();
+            System.out.println("Please choose one currency:");
+            System.out.println("1. RMB; 2. Dollar");
+        } while (!util.validateCurrency(currency));
+
+        System.out.println("Please choose an operation:");
+        System.out.println("1. Deposit; 2. Withdrawal");
+
+        Integer operation = scanner.nextInt();
+        do {
+            System.out.println("Please choose a correct operation:");
+            System.out.println("1. Deposit; 2. Withdrawal");
+        } while (!util.validateOperation(operation));
+
+        System.out.println("Please enter amount:");
+
+        Integer amount = scanner.nextInt();
+    }
+}
+
+class Util {
+    public Money formatMoney(Double amount, Integer currency) {
+        Money money = null;
+        if (currency == Currency.RMB.getValue()) {
+            money = new Rmb(amount);
+        } else if (currency == Currency.DOLLAR.getValue()) {
+            money = new Dollar(amount);
+        } else {
+            System.out.println("Please enter correct number:");
+        }
+
+        return money;
+    }
+
+    public boolean validateOperation(Integer operation) {
+        Boolean isAllowedOp = false;
+        for (Operation o : Operation.values()) {
+            if (operation == o.getValue()) {
+                isAllowedOp = true;
+                break;
+            }
+        }
+
+        return isAllowedOp;
+    }
+
+    public boolean validateCurrency(Integer currency) {
+        Boolean isAllowedCurrency = false;
+        for (Currency c : Currency.values()) {
+            if (currency == c.getValue()) {
+                isAllowedCurrency = true;
+                break;
+            }
+        }
+
+        return isAllowedCurrency;
+    }
+}
+
+class Bank {
+    public Money deposit(Double amount, Currency currency) {
+        Money balance = null;
+        // TODO
+        return balance;
+    }
+}
+
+/**
+ * 
+ */
+package lila.first;
+
+/**
+ * @author lila.zhou
+ *
+ */
+public class Account {
+    private Money balance;
+
+    public Money getBalance() {
+        return balance;
+    }
+
+    public void setBalance(Money balance) {
+        this.balance = balance;
+    }
+}
+
+/**
+ * 
+ */
+package lila.first;
+
+/**
+ * @author lila.zhou
+ *
+ */
+public enum Currency {
+    RMB(1), DOLLAR(2);
+    private final Integer value;
+
+    private Currency(Integer value) {
+        this.value = value;
+    }
+
+    public Integer getValue() {
+        return this.value;
+    }
+}
+
+/**
+ * 
+ */
+package lila.first;
+
+/**
+ * @author lila.zhou
+ *
+ */
+public class Dollar extends Money {
+    public Dollar(Double amount) {
+        super(amount);
+        super.setSymbol('$');
+        super.setExangeRate(6.32);
+    }
+}
+
+/**
+ * 
+ */
+package lila.first;
+
+/**
+ * @author lila.zhou
+ *
+ */
+public class DollarAccount extends Account {
+    public DollarAccount(Dollar balance) {
+        super.setBalance(balance);
+    }
+}
+
+package lila.first;
+
+
+public class HelloJava {
+
+    /**
+     * @param args
+     */
+    public static void main(String[] args) {
+        // TODO
+        for (Currency c : Currency.values()) {
+            System.out.println(c);
+        }
+    }
+}
+
+/**
+ * 
+ */
+package lila.first;
+
+/**
+ * @author lila.zhou
+ *
+ */
+public abstract class Money {
+    private char symbol;
+
+    private char decimal = 2;
+
+    private char thousandsSeprater = ',';
+
+    private double exangeRate = 1.00;
+
+    private double amount;
+
+    public Money(Double amount) {
+        this.amount = amount;
+    }
+
+    public char getSymbol() {
+        return symbol;
+    }
+
+    protected void setSymbol(char symbol) {
+        this.symbol = symbol;
+    }
+
+    public char getDecimal() {
+        return decimal;
+    }
+
+    public char getThousandsSeprater() {
+        return thousandsSeprater;
+    }
+
+    protected void setThousandsSeprater(char thousandsSeprater) {
+        this.thousandsSeprater = thousandsSeprater;
+    }
+
+    public double getExangeRate() {
+        return exangeRate;
+    }
+
+    protected void setExangeRate(double d) {
+        this.exangeRate = d;
+    }
+
+    public double getAmount() {
+        return amount;
+    }
+
+    public void setAmount(double amount) {
+        this.amount = amount;
+    }
+}
+
+
+/**
+ * 
+ */
+package lila.first;
+
+/**
+ * @author lila.zhou
+ *
+ */
+public enum Operation {
+    DEPOSIT(1), WITHDRAWAL(2);
+
+    public final Integer value;
+
+    private Operation(Integer value) {
+        this.value = value;
+    }
+
+    public Integer getValue() {
+        return this.value;
+    }
+}
+
+/**
+ * 
+ */
+package lila.first;
+
+/**
+ * @author lila.zhou
+ *
+ */
+public class Rmb extends Money {
+    public Rmb(Double amount) {
+        super(amount);
+        super.setSymbol('¥');
+        super.setExangeRate(1.00);
+    }
+}
+
+/**
+ * 
+ */
+package lila.first;
+
+/**
+ * @author lila.zhou
+ *
+ */
+public class RmbAccount extends Account {
+    public RmbAccount(Rmb balance) {
+        super.setBalance(balance);
+    }
+}
