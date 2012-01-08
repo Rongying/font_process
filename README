@@ -1,3 +1,54 @@
+package lila.first;
+
+public class Account {
+    private Rmb rmbBalance;
+	
+	private Dollar dollarBalance;
+
+	private static Account account = null;
+	
+	private Account(Rmb rmb, Dollar dollar) {
+		this.rmbBalance = rmb;
+		this.dollarBalance = dollar;
+	}
+	
+	public static Account getInstance() {
+		if (account == null) {
+			account = new Account(new Rmb(1000000000.00), new Dollar(10.00));
+		}
+		
+		return account;
+	}
+	
+	public Rmb getRmbBalance() {
+		return rmbBalance;
+	}
+
+	public void setRmbBalance(Rmb rmbBalance) {
+		this.rmbBalance = rmbBalance;
+	}
+
+	public Dollar getDollarBalance() {
+		return dollarBalance;
+	}
+
+	public void setDollarBalance(Dollar dollarBalance) {
+		this.dollarBalance = dollarBalance;
+	}
+	
+	public boolean hasBalance(Money money) {
+		Boolean hasBalance = true;
+		Double balance = this.rmbBalance.getAmount() * this.rmbBalance.getExangeRate() 
+				+ this.dollarBalance.getAmount() * this.dollarBalance.getExangeRate();
+		
+		if (balance.compareTo(money.getAmount() * money.getExangeRate()) < 0) {
+			hasBalance = false;
+		}
+		
+		return hasBalance;
+	}
+}
+
 /**
  * 
  */
@@ -6,122 +57,158 @@ package lila.first;
 import java.util.Scanner;
 
 /**
- * @author lila.zhou
+ * @author Lila Zhou
  *
  */
 public class Atm {
 
     /**
-     * @param args
-     */
-    public static void main(String[] args) {
+	 * @param args
+	 */
+	public static void main(String[] args) {
         Scanner scanner = new Scanner(System.in);
         Util util = new Util();
 
         System.out.println("Welcome to use Lila Bank's ATM");
 
-        System.out.println("Please choose currency:");
-        System.out.println("1. RMB; 2. Dollar"); // TODO DIY
-
-        Integer currency = scanner.nextInt();
+        Integer op = null;
+        Operation operation = null;
         do {
-            currency = scanner.nextInt();
-            System.out.println("Please choose one currency:");
-            System.out.println("1. RMB; 2. Dollar");
-        } while (!util.validateCurrency(currency));
-
-        System.out.println("Please choose an operation:");
-        System.out.println("1. Deposit; 2. Withdrawal");
-
-        Integer operation = scanner.nextInt();
-        do {
-            System.out.println("Please choose a correct operation:");
+            System.out.println("Please choose one operation:");
             System.out.println("1. Deposit; 2. Withdrawal");
-        } while (!util.validateOperation(operation));
+            op = scanner.nextInt();
+            operation = util.validateOperation(op);
+        } while (operation == null);
 
-        System.out.println("Please enter amount:");
+        Integer c = null;
+        Currency currency = null;
+        do {
+        	System.out.println("Please choose one currency:");
+            System.out.println("1. RMB; 2. Dollar");
+        	c = scanner.nextInt();
+        	currency = util.validateCurrency(c);
+        } while (currency == null);
 
-        Integer amount = scanner.nextInt();
-    }
-}
+         
 
-class Util {
-    public Money formatMoney(Double amount, Integer currency) {
+        Double amount = null;
         Money money = null;
-        if (currency == Currency.RMB.getValue()) {
-            money = new Rmb(amount);
-        } else if (currency == Currency.DOLLAR.getValue()) {
-            money = new Dollar(amount);
-        } else {
-            System.out.println("Please enter correct number:");
+        do {
+        	System.out.printf("Please enter correct amount, between 0 and %.2f:", Util.MAX_TRADE_MONEY);
+        	amount = scanner.nextDouble();
+        	money = util.formatMoney(amount, currency);
+        } while (null == money);
+
+        Bank bank = new Bank(operation, money, Account.getInstance());
+        if (bank.Operate()) {
+        	Account account = Account.getInstance();
+        	System.out.printf(
+        	    "Your Rmb Balance is %s, and your Dollar balance is %s.%n", 
+        	    account.getRmbBalance().toString(),
+        	    account.getDollarBalance().toString()
+			);
+        	System.out.println("Thank you for using Lila bank's ATM");
         }
-
-        return money;
-    }
-
-    public boolean validateOperation(Integer operation) {
-        Boolean isAllowedOp = false;
-        for (Operation o : Operation.values()) {
-            if (operation == o.getValue()) {
-                isAllowedOp = true;
-                break;
-            }
+        else {
+        	System.out.println("Your balance is not enough.");
         }
+	}
 
-        return isAllowedOp;
-    }
-
-    public boolean validateCurrency(Integer currency) {
-        Boolean isAllowedCurrency = false;
-        for (Currency c : Currency.values()) {
-            if (currency == c.getValue()) {
-                isAllowedCurrency = true;
-                break;
-            }
-        }
-
-        return isAllowedCurrency;
-    }
 }
-
-class Bank {
-    public Money deposit(Double amount, Currency currency) {
-        Money balance = null;
-        // TODO
-        return balance;
-    }
-}
-
-/**
- * 
- */
 package lila.first;
 
-/**
- * @author lila.zhou
- *
- */
-public class Account {
-    private Money balance;
+public class Bank {
+    private Operation operation;
+	
+	private Account account;
+	
+	private Money money;
+	
+	public Bank(Operation operation, Money money, Account account) {
+		this.operation = operation;
+		this.money = money;
+		this.account = account;
+	}
+	
+	public Boolean Operate() {
+ 		Boolean isSucceed = false;
+ 		
+		switch (this.operation)  {
+        case DEPOSIT:
+        	isSucceed = this.deposit();
+        	break;
+        case WITHDRAWAL:
+        	isSucceed = this.withdrawal();
+        }	
 
-    public Money getBalance() {
-        return balance;
+		return isSucceed;
     }
+	
+	public Boolean deposit() {
+		Boolean isSucceed = false;
+		
+		Money balance = null;
+		balance = this.getAccountBalance(balance, this.money.getCurrency());		
+		if (balance != null) {
+			balance.setAmount(balance.getAmount() + this.money.getAmount());
+			isSucceed = true;
+		}
+		
+		return isSucceed;
+	}
+	
+	public Boolean withdrawal() {
+		Boolean isSucceed = false;
 
-    public void setBalance(Money balance) {
-        this.balance = balance;
-    }
+		if (this.account.hasBalance(this.money)) {
+			if (this.withdraw(this.money.getCurrency())) {
+				for (Currency c : Currency.values()) {
+					if (c == this.money.getCurrency()) {
+						continue;
+					}
+					if (!this.withdraw(c)) {
+						break;
+					}
+		        }
+			}
+			
+			isSucceed = true;
+		}
+
+		return isSucceed;
+	}
+	
+	private Money getAccountBalance(Money balance, Currency currency) {
+		switch (currency) {
+		case RMB :
+			balance = this.account.getRmbBalance();
+			break;
+		case DOLLAR:
+			balance = this.account.getDollarBalance();
+			break;
+		}
+		
+		return balance;
+	}
+
+	private Boolean withdraw(Currency currency) {
+		Money balance = null;
+		balance = this.getAccountBalance(balance, currency);
+		Boolean needContinue = false;
+		if (balance != null) {
+			balance.setAmount((balance.getAmount() * balance.getExangeRate() - this.money.getAmount() * this.money.getExangeRate()) / balance.getExangeRate());
+			if (balance.getAmount().compareTo(0.00) < 0) {
+				needContinue = true;
+				this.money.setAmount(this.money.getAmount() + balance.getAmount() * balance.getExangeRate() / this.money.getExangeRate());
+				balance.setAmount(0.00);				
+			} 
+		}
+
+		return needContinue;
+	}
 }
-
-/**
- * 
- */
 package lila.first;
 
-/**
- * @author lila.zhou
- *
- */
 public enum Currency {
     RMB(1), DOLLAR(2);
     private final Integer value;
@@ -134,75 +221,41 @@ public enum Currency {
         return this.value;
     }
 }
-
-/**
- * 
- */
 package lila.first;
 
-/**
- * @author lila.zhou
- *
- */
 public class Dollar extends Money {
     public Dollar(Double amount) {
         super(amount);
+        super.setCurrency(Currency.DOLLAR);
         super.setSymbol('$');
         super.setExangeRate(6.32);
     }
 }
-
-/**
- * 
- */
 package lila.first;
 
-/**
- * @author lila.zhou
- *
- */
-public class DollarAccount extends Account {
-    public DollarAccount(Dollar balance) {
-        super.setBalance(balance);
-    }
-}
+import java.text.DecimalFormat;
 
-package lila.first;
+public class Money {
+    private Currency currency;
 
-
-public class HelloJava {
-
-    /**
-     * @param args
-     */
-    public static void main(String[] args) {
-        // TODO
-        for (Currency c : Currency.values()) {
-            System.out.println(c);
-        }
-    }
-}
-
-/**
- * 
- */
-package lila.first;
-
-/**
- * @author lila.zhou
- *
- */
-public abstract class Money {
-    private char symbol;
+	private char symbol;
 
     private char decimal = 2;
 
     private char thousandsSeprater = ',';
 
-    private double exangeRate = 1.00;
+    private Double exangeRate = 1.00;
 
-    private double amount;
+    private Double amount;
 
+	public Currency getCurrency() {
+		return currency;
+	}
+
+	protected void setCurrency(Currency currency) {
+		this.currency = currency;
+	}
+    
     public Money(Double amount) {
         this.amount = amount;
     }
@@ -231,29 +284,25 @@ public abstract class Money {
         return exangeRate;
     }
 
-    protected void setExangeRate(double d) {
+    protected void setExangeRate(Double d) {
         this.exangeRate = d;
     }
 
-    public double getAmount() {
+    public Double getAmount() {
         return amount;
     }
 
-    public void setAmount(double amount) {
+    public void setAmount(Double amount) {
         this.amount = amount;
     }
+    
+	public String toString() {
+		DecimalFormat df1 = new DecimalFormat("0.00");
+		return this.getSymbol() + df1.format(this.getAmount());
+	}
 }
-
-
-/**
- * 
- */
 package lila.first;
 
-/**
- * @author lila.zhou
- *
- */
 public enum Operation {
     DEPOSIT(1), WITHDRAWAL(2);
 
@@ -267,35 +316,71 @@ public enum Operation {
         return this.value;
     }
 }
-
-/**
- * 
- */
 package lila.first;
 
-/**
- * @author lila.zhou
- *
- */
 public class Rmb extends Money {
     public Rmb(Double amount) {
         super(amount);
+        super.setCurrency(Currency.RMB);
         super.setSymbol('¥');
         super.setExangeRate(1.00);
     }
 }
-
-/**
- * 
- */
 package lila.first;
 
-/**
- * @author lila.zhou
- *
- */
-public class RmbAccount extends Account {
-    public RmbAccount(Rmb balance) {
-        super.setBalance(balance);
+public class Util {
+    public static final double MAX_TRADE_MONEY = 1000000000000.00;
+	
+	public Money formatMoney(Double amount, Currency currency) {
+        Money money = null;
+        
+        if (this.validateAmount(amount)) {
+        	switch (currency) {
+        	case RMB:
+        		money = new Rmb(amount);
+        		break;
+        	case DOLLAR:
+        		money = new Dollar(amount);
+        		break;
+        	}
+        }
+        
+        return money;
+    }
+
+	private boolean validateAmount(Double amount) {
+		Boolean isAllowedAmount = true;
+		
+		if (amount.compareTo(0.00) <= 0) {
+			isAllowedAmount = false;
+		} else if (amount.compareTo(MAX_TRADE_MONEY) > 0) {
+			isAllowedAmount = false;
+		}
+		
+		return isAllowedAmount;
+	}
+	
+    public Operation validateOperation(Integer operation) {
+        Operation result = null;
+        for (Operation o : Operation.values()) {
+            if (operation == o.getValue()) {
+            	result = o;
+                break;
+            }
+        }
+
+        return result;
+    }
+
+    public Currency validateCurrency(Integer currency) {
+        Currency result = null;
+        for (Currency c : Currency.values()) {
+            if (currency == c.getValue()) {
+            	result = c;
+                break;
+            }
+        }
+
+        return result;
     }
 }
